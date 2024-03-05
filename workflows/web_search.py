@@ -27,8 +27,43 @@ class OverallState(InputState, OutputState):
 
 @tool
 def get_web_search_results(searchQuery: str):
+    """Get Web Search results"""
 
 
 
 def create_web_search_agent():
-    tools_market_value = [get_web_search_results]
+    tools_web_search = [get_web_search_results]
+    sport_event_info = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools_web_search)
+
+    async def call_sport_event_web_search_tool(state: OverallState):
+        local_messages = state.get("messages", [])
+        if not local_messages:
+            human_message = HumanMessage(content=state["article"])
+            local_messages.append(human_message)
+
+        system_message = SystemMessage(
+            content="""You are an agent tasked with fetching information about a sports event.
+            If the information about the sports event is available, return it. Otherwise, return 'Sports event information not available.'"""
+        )
+
+        response = await sport_event_info.ainvoke([system_message] + local_messages)
+
+        state["agent_output"] = response.content
+        state["messages"] = local_messages + [response]
+
+        return state
+
+    def should_continue(state: OverallState) -> Literal["tools", END]: # type: ignore
+        last_message = state["messages"][-1]
+        if getattr(last_message, "tool_calls", None):
+            return "tools"
+        return END
+
+    sport_event_info_graph = StateGraph(OverallState, input=InputState, output=OutputState)
+    sport_event_info_graph.add_node("call_sport_event_web_search_tool", call_sport_event_web_search_tool)
+    sport_event_info_graph.add_node("tools", ToolNode(tools_web_search))
+    sport_event_info_graph.add_edge(START, "call_sport_event_web_search_tool")
+    sport_event_info_graph.add_conditional_edges("call_sport_event_web_search_tool", should_continue)
+    sport_event_info_graph.add_edge("tools", "call_sport_event_web_search_tool")
+
+    return sport_event_info_graph.compile()
