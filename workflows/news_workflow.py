@@ -5,9 +5,8 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
-from .current_club import create_current_club_agent
-from .market_value import create_market_value_agent
 from .text_writer import create_text_writer_agent
+from .web_search import create_web_search_agent
 
 
 class ArticlePostabilityGrader(BaseModel):
@@ -43,13 +42,13 @@ class SharedArticleState(InputArticleState, OutputFinalArticleState):
     mentions_sport_name: str
     mentions_team_names: str
     mentions_tournament_name: str
+    web_search_complete: bool
     meets_100_words: str
 
 
 class NewsWorkflow:
     def __init__(self, llm_model="gpt-4o-mini", temperature=0):
-        self.current_club_agent = create_current_club_agent()
-        self.market_value_agent = create_market_value_agent()
+        self.web_search_agent = create_web_search_agent()
         self.text_writer_agent = create_text_writer_agent()
         self.llm_postability = ChatOpenAI(model=llm_model, temperature=temperature)
         self.workflow = self._create_workflow()
@@ -85,17 +84,14 @@ class NewsWorkflow:
         state["mentions_team_names"] = response.teams_mentioned
         state["mentions_tournament_name"] = response.tournament_name_mentioned
         state["meets_100_words"] = response.meets_100_words
+        state["web_search_complete"] = False
         return state
 
-    # async def market_value_researcher_node(self, state: SharedArticleState) -> SharedArticleState:
-    #     response = await self.market_value_agent.ainvoke({"article": state["article"]})
-    #     state["article"] += f" {response['agent_output']}"
-    #     return state
-
-    # async def current_club_researcher_node(self, state: SharedArticleState) -> SharedArticleState:
-    #     response = await self.current_club_agent.ainvoke({"article": state["article"]})
-    #     state["article"] += f" {response['agent_output']}"
-    #     return state
+    async def web_search_node(self, state: SharedArticleState) -> SharedArticleState:
+        response = await self.web_search_agent.ainvoke({"article": state["article"]})
+        state["web_search_complete"] = True
+        state["article"] += f"{response['agent_output']}"
+        return state
 
     async def word_count_rewriter_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.text_writer_agent.ainvoke({"article": state["article"]})
@@ -103,17 +99,18 @@ class NewsWorkflow:
         state["final_article"] = response["agent_output"]
         return state
 
-    def news_chef_decider(self,state: SharedArticleState,) -> Literal["market_value_researcher", "current_club_researcher", "word_count_rewriter", END]:
+    def news_chef_decider(self,state: SharedArticleState,) -> Literal["web_searcher", "word_count_rewriter", END]: # type: ignore
         if state["off_or_ontopic"] == "no":
             return END
-        if state["mentions_market_value"] == "no":
-            next_node = "market_value_researcher"
-        elif state["mentions_current_club"] == "no":
-            next_node = "current_club_researcher"
+        elif (
+            state["mentions_sport_name"] == "yes" 
+            and state["mentions_team_names"] == "yes" 
+            and state["mentions_tournament_name"] == "yes"
+            ):
+            next_node = "web_searcher"
         elif (
             state["meets_100_words"] == "no"
-            and state["mentions_market_value"] == "yes"
-            and state["mentions_current_club"] == "yes"
+            and state["web_search_complete"] == True
         ):
             next_node = "word_count_rewriter"
         else:
@@ -125,22 +122,19 @@ class NewsWorkflow:
             SharedArticleState, input=InputArticleState, output=OutputFinalArticleState
         )
         workflow.add_node("news_chef", self.update_article_state)
-        workflow.add_node("market_value_researcher", self.market_value_researcher_node)
-        workflow.add_node("current_club_researcher", self.current_club_researcher_node)
+        workflow.add_node("web_searcher", self.web_search_node)
         workflow.add_node("word_count_rewriter", self.word_count_rewriter_node)
         workflow.set_entry_point("news_chef")
         workflow.add_conditional_edges(
             "news_chef",
             self.news_chef_decider,
             {
-                "market_value_researcher": "market_value_researcher",
-                "current_club_researcher": "current_club_researcher",
+                "web_searcher": "web_searcher",
                 "word_count_rewriter": "word_count_rewriter",
                 END: END,
             },
         )
-        workflow.add_edge("market_value_researcher", "news_chef")
-        workflow.add_edge("current_club_researcher", "news_chef")
+        workflow.add_edge("web_searcher", "news_chef")
         workflow.add_edge("word_count_rewriter", "news_chef")
 
         return workflow.compile()

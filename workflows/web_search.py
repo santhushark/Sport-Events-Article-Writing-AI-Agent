@@ -25,3 +25,10 @@ class OverallState(InputState, OutputState):
     messages: Annotated[List[BaseMessage], add]
 
 
+@tool
+def get_web_search_results(searchQuery: str):
+
+
+
+def create_web_search_agent():
+    tools_market_value = [get_web_search_results]
