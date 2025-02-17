@@ -1,15 +1,19 @@
 from contextlib import asynccontextmanager
-from typing import Optional
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg_pool import AsyncConnectionPool
-from pydantic import BaseModel
-from sqlalchemy import Boolean, Column, String, Text, create_engine, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from workflows.human_workflow import HumanWorkflow
+from models.thread import Thread
+from httpresponse.thread_response import ThreadResponse
+from httpresponse.start_thread_response import StartThreadResponse
+from httprequest.chat_request import ChatRequest
+from httprequest.update_state_request import UpdateStateRequest
+
 
 DEFAULT_DATABASE_URL = (
     "postgresql+psycopg://postgres:postgres@postgres_local:5432/postgres"
@@ -25,16 +29,6 @@ Base = declarative_base()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=target_engine)
 
 human_workflow = HumanWorkflow()
-
-
-class Thread(Base):
-    __tablename__ = "threads"
-    thread_id = Column(String, primary_key=True, index=True)
-    question_asked = Column(Boolean, default=False)
-    question = Column(String, nullable=True)
-    answer = Column(Text, nullable=True)
-    confirmed = Column(Boolean, default=False)
-    error = Column(Boolean, default=False)
 
 
 def initialize_database():
@@ -86,27 +80,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-class ThreadResponse(BaseModel):
-    thread_id: str
-    question_asked: bool
-    question: Optional[str] = None
-    answer: Optional[str] = None
-    confirmed: bool
-    error: bool
-
-
-class StartThreadResponse(BaseModel):
-    thread_id: str
-
-
-class ChatRequest(BaseModel):
-    question: Optional[str] = None
-
-
-class UpdateStateRequest(BaseModel):
-    answer: str
 
 
 @app.post("/start_thread", response_model=StartThreadResponse)
