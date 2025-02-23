@@ -27,6 +27,9 @@ class HumanWorkflow:
     def set_checkpointer(self, checkpointer):
         self.checkpointer = checkpointer
         self.workflow = self._create_workflow()
+    
+    def init_create_workflow(self):
+        self.workflow = self._create_workflow()
 
     def _create_workflow(self):
         workflow = StateGraph(FinalState, input=InputState, output=FinalState)

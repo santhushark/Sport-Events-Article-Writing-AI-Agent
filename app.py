@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI):
         await checkpointer.setup()
 
         human_workflow.set_checkpointer(checkpointer)
-
+        human_workflow.init_create_workflow()
         yield
 
 

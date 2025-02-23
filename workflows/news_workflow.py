@@ -71,9 +71,7 @@ class NewsWorkflow:
             ArticlePostabilityGrader
         )
 
-    async def update_article_state(
-        self, state: SharedArticleState
-    ) -> SharedArticleState:
+    async def update_article_state(self, state: SharedArticleState) -> SharedArticleState:
         news_chef = self._create_postability_grader()
         response = await news_chef.ainvoke({"article": state["article"]})
         state["off_or_ontopic"] = response.off_or_ontopic
@@ -82,34 +80,23 @@ class NewsWorkflow:
         state["meets_100_words"] = response.meets_100_words
         return state
 
-    async def market_value_researcher_node(
-        self, state: SharedArticleState
-    ) -> SharedArticleState:
+    async def market_value_researcher_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.market_value_agent.ainvoke({"article": state["article"]})
         state["article"] += f" {response['agent_output']}"
         return state
 
-    async def current_club_researcher_node(
-        self, state: SharedArticleState
-    ) -> SharedArticleState:
+    async def current_club_researcher_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.current_club_agent.ainvoke({"article": state["article"]})
         state["article"] += f" {response['agent_output']}"
         return state
 
-    async def word_count_rewriter_node(
-        self, state: SharedArticleState
-    ) -> SharedArticleState:
+    async def word_count_rewriter_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.text_writer_agent.ainvoke({"article": state["article"]})
         state["article"] += f" {response['agent_output']}"
         state["final_article"] = response["agent_output"]
         return state
 
-    def news_chef_decider(
-        self,
-        state: SharedArticleState,
-    ) -> Literal[
-        "market_value_researcher", "current_club_researcher", "word_count_rewriter", END
-    ]:
+    def news_chef_decider(self,state: SharedArticleState,) -> Literal["market_value_researcher", "current_club_researcher", "word_count_rewriter", END]:
         if state["off_or_ontopic"] == "no":
             return END
         if state["mentions_market_value"] == "no":
