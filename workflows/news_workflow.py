@@ -11,16 +11,19 @@ from .text_writer import create_text_writer_agent
 
 
 class ArticlePostabilityGrader(BaseModel):
-    """Binary scores for verifying if an article mentions market value, current club, and meets the minimum word count of 100 words."""
+    """Binary scores for verifying if an article mentions sport name, team names, tournament name, and meets the minimum word count of 100 words."""
 
     off_or_ontopic: str = Field(
-        description="The Article is about football transfers, 'yes' or 'no'"
+        description="The Article is about a sport event, 'yes' or 'no'"
     )
-    mentions_market_value: str = Field(
-        description="The article mentions the player's market value, 'yes' or 'no'"
+    sport_name_mentioned: str = Field(
+        description="The article mentions the name of the sport, 'yes' or 'no'"
     )
-    mentions_current_club: str = Field(
-        description="The article mentions the player's current club, 'yes' or 'no'"
+    teams_mentioned: str = Field(
+        description="The article mentions the 2 team names or 2 individual player names, 'yes' or 'no'"
+    )
+    tournament_name_mentioned: str = Field(
+        description="The article mentions the name of the tournament, 'yes' or 'no'"
     )
     meets_100_words: str = Field(
         description="The article has at least 100 words, 'yes' or 'no'"
@@ -37,8 +40,9 @@ class OutputFinalArticleState(TypedDict):
 
 
 class SharedArticleState(InputArticleState, OutputFinalArticleState):
-    mentions_market_value: str
-    mentions_current_club: str
+    mentions_sport_name: str
+    mentions_team_names: str
+    mentions_tournament_name: str
     meets_100_words: str
 
 
@@ -77,8 +81,9 @@ class NewsWorkflow:
         news_chef = self._create_postability_grader()
         response = await news_chef.ainvoke({"article": state["article"]})
         state["off_or_ontopic"] = response.off_or_ontopic
-        state["mentions_market_value"] = response.mentions_market_value
-        state["mentions_current_club"] = response.mentions_current_club
+        state["mentions_sport_name"] = response.sport_name_mentioned
+        state["mentions_team_names"] = response.teams_mentioned
+        state["mentions_tournament_name"] = response.tournament_name_mentioned
         state["meets_100_words"] = response.meets_100_words
         return state
 
