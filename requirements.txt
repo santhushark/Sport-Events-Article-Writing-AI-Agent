@@ -7,3 +7,4 @@ langchain
 langgraph-checkpoint-postgres
 langchain-openai
 python-dotenv
+tavily-python
