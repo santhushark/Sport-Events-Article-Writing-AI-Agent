@@ -53,15 +53,17 @@ class NewsWorkflow:
     def _create_postability_grader(self):
         prompt_template = """
         You are a grader assessing whether a news article meets the following criteria:
-        1. The article is about football transfers or not. If yes answer, answer with 'yes', anotherwise with 'no'.
-        1. The article explicitly mentions the player's market value, for example, by stating "market value" or a specific currency amount (e.g., "$50 million"). If this is present, respond with 'yes' for mentions_market_value; otherwise, respond 'no'.
-        2. The article mentions the player's current club or indicates that the current club information is unavailable (e.g., "Current club information not available"). If this is present, respond with 'yes' for mentions_current_club; otherwise, respond 'no'.
-        3. The article contains at least 100 words. If this is met, respond with 'yes' for meets_100_words; otherwise, respond 'no'.
+        1. The article is about sports or not. If yes answer, answer with 'yes' for off_or_ontopic, otherwise with 'no'.
+        2. The articel explicitly mentions the name of the sport (e.g., "Cricket" or "Football" or "Hockey".etc.). If it is present answer with 'yes' for sport_name_mentioned, otherwise respond with 'no'.
+        3. The article explicitly mentions the sport event details, for example, by stating "2 team names" for a team sport or "2 player names" for a individual sport (e.g., "India vs Pakistan" or "Roger Federer vs Rafael Nadal"). If this is present, respond with 'yes' for teams_mentioned; otherwise, respond 'no'.
+        4. The article mentions the tournament name (e.g. "ICC Champions Trophy" or "World Cup" or "English Premier League" or "Asia Cup" or "Wimbledon" or "French Open"). If it is present answer with 'yes' for tournament_name_mentioned; otherwise answer with 'no'.
+        5. The article contains at least 100 words. If this is met, respond with 'yes' for meets_100_words; otherwise, respond 'no'.
 
         Provide four binary scores ('yes' or 'no') as follows:
-        - off_or_ontopic: 'yes' or 'no' depending on whether the article is related to football transfers or not.
-        - mentions_market_value: 'yes' or 'no' depending on whether the article mentions the player's market value.
-        - mentions_current_club: 'yes' or 'no' depending on whether the article mentions the player's current club or states that the information is unavailable.
+        - off_or_ontopic: 'yes' or 'no' depending on whether the article is related to a sport event.
+        - sport_name_mentioned: 'yes' or 'no' depending on whether the article mentions the name of the sport.
+        - teams_mentioned: 'yes' or 'no' depending on whether the article mentions the name of 2 players or 2 teams.
+        - tournament_name_mentioned: 'yes' or 'no' depending on whether the article mentions the name of the tournament.
         - meets_100_words: 'yes' or 'no' depending on whether the article has at least 100 words.
         """
         postability_system = ChatPromptTemplate.from_messages(
