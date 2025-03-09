@@ -23,7 +23,7 @@ def create_web_search_query_generator_agent():
     async def generate_web_search_query(state: OverallState):
         human_message = HumanMessage(content=state["article"])
         system_message = SystemMessage(
-            content="You are a web search query generator agent. Generate a web search query to fetch relevant data about a sports event mentioned below. The query should be regarding the sports event summary."
+            content="You are a web search query generator agent. Generate a web search query to do web search about a sports event mentioned below. The query should be regarding the sports event summary."
         )
         response = await model_query_generator.ainvoke([system_message, human_message])
         state["web_search_query"] = response.content
