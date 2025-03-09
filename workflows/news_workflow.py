@@ -45,7 +45,6 @@ class SharedArticleState(InputArticleState, OutputFinalArticleState):
     mentions_tournament_name: str
     web_search_complete: bool
     web_search_query_generated: bool
-    web_search_query: str
     meets_100_words: str
 
 
@@ -89,17 +88,17 @@ class NewsWorkflow:
         state["mentions_tournament_name"] = response.tournament_name_mentioned
         state["meets_100_words"] = response.meets_100_words
         state["web_search_complete"] = False
+        state["web_search_query_generated"] = False
         return state
 
     async def web_search_query_gen_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.web_search_query_generator_agent.ainvoke({"article": state["article"]}) 
         state["article"] += f"{response['agent_output']}"
-        state["web_search_query"] = response['web_search_query']
         state["web_search_query_generated"] = True
         return state
 
     async def web_search_node(self, state: SharedArticleState) -> SharedArticleState:
-        response = await self.web_search_agent.ainvoke({"article": state["web_search_query"]})
+        response = await self.web_search_agent.ainvoke({"article": state["article"]})
         state["article"] += f"{response['agent_output']}"
         state["web_search_complete"] = True
         return state
@@ -117,6 +116,12 @@ class NewsWorkflow:
             state["mentions_sport_name"] == "yes" 
             and state["mentions_team_names"] == "yes" 
             and state["mentions_tournament_name"] == "yes"
+            and state["web_search_query_generated"] == False
+        ):
+            next_node = "web_search_query_generator"
+        elif (
+            state["web_search_query_generated"] == True
+            and state["web_search_complete"] == False
             ):
             next_node = "web_searcher"
         elif (
@@ -133,6 +138,7 @@ class NewsWorkflow:
             SharedArticleState, input=InputArticleState, output=OutputFinalArticleState
         )
         workflow.add_node("news_chef", self.update_article_state)
+        workflow.add_node("web_search_query_generator", self.web_search_query_gen_node)
         workflow.add_node("web_searcher", self.web_search_node)
         workflow.add_node("word_count_rewriter", self.word_count_rewriter_node)
         workflow.set_entry_point("news_chef")
@@ -140,6 +146,7 @@ class NewsWorkflow:
             "news_chef",
             self.news_chef_decider,
             {
+                "web_search_query_generator": "web_search_query_generator",
                 "web_searcher": "web_searcher",
                 "word_count_rewriter": "word_count_rewriter",
                 END: END,
@@ -147,6 +154,7 @@ class NewsWorkflow:
         )
         workflow.add_edge("web_searcher", "news_chef")
         workflow.add_edge("word_count_rewriter", "news_chef")
+        workflow.add_edge("web_search_query_generator", "news_chef")
 
         return workflow.compile()
 
