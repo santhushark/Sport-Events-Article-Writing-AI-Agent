@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from .text_writer import create_text_writer_agent
 from .web_search import create_web_search_agent
+from .web_search_query_generator import create_web_search_query_generator_agent
 
 
 class ArticlePostabilityGrader(BaseModel):
@@ -43,11 +44,14 @@ class SharedArticleState(InputArticleState, OutputFinalArticleState):
     mentions_team_names: str
     mentions_tournament_name: str
     web_search_complete: bool
+    web_search_query_generated: bool
+    web_search_query: str
     meets_100_words: str
 
 
 class NewsWorkflow:
     def __init__(self, llm_model="gpt-4o-mini", temperature=0):
+        self.web_search_query_generator_agent = create_web_search_query_generator_agent()
         self.web_search_agent = create_web_search_agent()
         self.text_writer_agent = create_text_writer_agent()
         self.llm_postability = ChatOpenAI(model=llm_model, temperature=temperature)
@@ -87,10 +91,17 @@ class NewsWorkflow:
         state["web_search_complete"] = False
         return state
 
-    async def web_search_node(self, state: SharedArticleState) -> SharedArticleState:
-        response = await self.web_search_agent.ainvoke({"article": state["article"]})
-        state["web_search_complete"] = True
+    async def web_search_query_gen_node(self, state: SharedArticleState) -> SharedArticleState:
+        response = await self.web_search_query_generator_agent.ainvoke({"article": state["article"]}) 
         state["article"] += f"{response['agent_output']}"
+        state["web_search_query"] = response['web_search_query']
+        state["web_search_query_generated"] = True
+        return state
+
+    async def web_search_node(self, state: SharedArticleState) -> SharedArticleState:
+        response = await self.web_search_agent.ainvoke({"article": state["web_search_query"]})
+        state["article"] += f"{response['agent_output']}"
+        state["web_search_complete"] = True
         return state
 
     async def word_count_rewriter_node(self, state: SharedArticleState) -> SharedArticleState:
