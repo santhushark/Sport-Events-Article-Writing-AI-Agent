@@ -7,6 +7,7 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
+from tavily import AsyncTavilyClient
 
 
 # Load environment variables
@@ -25,6 +26,7 @@ class OverallState(InputState, OutputState):
     messages: Annotated[List[BaseMessage], add]
 
 
+
 @tool
 def get_web_search_results(searchQuery: str):
     """Get Web Search results"""
@@ -34,6 +36,7 @@ def get_web_search_results(searchQuery: str):
 def create_web_search_agent():
     tools_web_search = [get_web_search_results]
     sport_event_info = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools_web_search)
+
 
     async def call_sport_event_web_search_tool(state: OverallState):
         local_messages = state.get("messages", [])
