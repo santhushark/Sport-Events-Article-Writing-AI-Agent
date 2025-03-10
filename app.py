@@ -8,9 +8,9 @@ from psycopg_pool import AsyncConnectionPool
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from workflows.human_workflow import HumanWorkflow
-from models.thread import Thread
 from httpresponse.thread_response import ThreadResponse
 from httpresponse.start_thread_response import StartThreadResponse
+from sqlalchemy import Boolean, Column, String, Text
 from httprequest.chat_request import ChatRequest
 from httprequest.update_state_request import UpdateStateRequest
 
@@ -30,6 +30,14 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=target_engin
 
 human_workflow = HumanWorkflow()
 
+class Thread(Base):
+    __tablename__ = "threads"
+    thread_id = Column(String, primary_key=True, index=True)
+    question_asked = Column(Boolean, default=False)
+    question = Column(String, nullable=True)
+    answer = Column(Text, nullable=True)
+    confirmed = Column(Boolean, default=False)
+    error = Column(Boolean, default=False)
 
 def initialize_database():
     with default_engine.connect() as connection:
@@ -98,6 +106,7 @@ async def start_thread(db: Session = Depends(get_db)):
 async def ask_question(
     thread_id: str, request: ChatRequest, db: Session = Depends(get_db)
 ):
+    # print("entry:" + request.question)
     thread = db.query(Thread).filter(Thread.thread_id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread ID does not exist.")

@@ -81,7 +81,9 @@ class NewsWorkflow:
 
     async def update_article_state(self, state: SharedArticleState) -> SharedArticleState:
         news_chef = self._create_postability_grader()
+        print("s-1")
         response = await news_chef.ainvoke({"article": state["article"]})
+        print("s-1", response)
         state["off_or_ontopic"] = response.off_or_ontopic
         state["mentions_sport_name"] = response.sport_name_mentioned
         state["mentions_team_names"] = response.teams_mentioned
@@ -92,13 +94,15 @@ class NewsWorkflow:
         return state
 
     async def web_search_query_gen_node(self, state: SharedArticleState) -> SharedArticleState:
-        response = await self.web_search_query_generator_agent.ainvoke({"article": state["article"]}) 
+        response = await self.web_search_query_generator_agent.ainvoke({"article": state["article"]})
+        # print("s-2"+ response) 
         state["article"] += f"{response['agent_output']}"
         state["web_search_query_generated"] = True
         return state
 
     async def web_search_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.web_search_agent.ainvoke({"article": state["article"]})
+        # print("s-3"+ response)
         state["article"] += f"{response['agent_output']}"
         state["web_search_complete"] = True
         return state

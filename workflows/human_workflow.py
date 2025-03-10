@@ -45,6 +45,7 @@ class HumanWorkflow:
 
     async def newsagent_node(self, state: IntermediateState) -> IntermediateState:
         try:
+            print("question: " + state["question"])
             response = await self.app.ainvoke({"article": state["question"]})
             state["answer"] = response.get(
                 "final_article", "Article not relevant for news agency"
