@@ -7,7 +7,7 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
-from tavily import AsyncTavilyClient
+from tavily import TavilyClient
 
 
 # Load environment variables
@@ -26,11 +26,17 @@ class OverallState(InputState, OutputState):
     messages: Annotated[List[BaseMessage], add]
 
 
-
 @tool
-def get_web_search_results(searchQuery: str):
+def get_web_search_results(web_search_query: str):
     """Get Web Search results"""
-
+    client = TavilyClient()
+    res = client.search(web_search_query, search_depth="advanced", topic = "news", days= 4, max_results= 5, include_answer=True, include_raw_content=True)
+    search_res_content = ""
+    search_res_content+= "web_search_answer_summary: "+ res["answer"]
+    for i in range(5):
+        search_res_content+= f"web_search_source-{i+1}: " + res["results"][i]["content"] + "\n"
+    
+    return search_res_content
 
 
 def create_web_search_agent():
