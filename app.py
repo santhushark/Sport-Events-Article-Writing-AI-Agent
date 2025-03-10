@@ -102,7 +102,7 @@ async def start_thread(db: Session = Depends(get_db)):
     return StartThreadResponse(thread_id=new_thread.thread_id)
 
 
-@app.post("/ask_question/{thread_id}", response_model=ThreadResponse)
+@app.post("/article_writer/{thread_id}", response_model=ThreadResponse)
 async def ask_question(
     thread_id: str, request: ChatRequest, db: Session = Depends(get_db)
 ):

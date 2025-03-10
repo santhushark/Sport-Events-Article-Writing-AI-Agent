@@ -4,4 +4,4 @@ from pydantic import BaseModel
 
 
 class ChatRequest(BaseModel):
-    question: Optional[str] = None
+    sport_event: Optional[str] = None
