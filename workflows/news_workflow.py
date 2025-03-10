@@ -48,7 +48,7 @@ class SharedArticleState(InputArticleState, OutputFinalArticleState):
     meets_100_words: str
 
 
-class NewsWorkflow:
+class ArticleWorkflow:
     def __init__(self, llm_model="gpt-4o-mini", temperature=0):
         self.web_search_query_generator_agent = create_web_search_query_generator_agent()
         self.web_search_agent = create_web_search_agent()
@@ -80,9 +80,9 @@ class NewsWorkflow:
         )
 
     async def update_article_state(self, state: SharedArticleState) -> SharedArticleState:
-        news_chef = self._create_postability_grader()
+        article_chef = self._create_postability_grader()
         print("s-1")
-        response = await news_chef.ainvoke({"article": state["article"]})
+        response = await article_chef.ainvoke({"article": state["article"]})
         print("s-1", response)
         state["off_or_ontopic"] = response.off_or_ontopic
         state["mentions_sport_name"] = response.sport_name_mentioned
@@ -113,7 +113,7 @@ class NewsWorkflow:
         state["final_article"] = response["agent_output"]
         return state
 
-    def news_chef_decider(self,state: SharedArticleState,) -> Literal["web_searcher", "word_count_rewriter", END]: # type: ignore
+    def article_chef_decider(self,state: SharedArticleState,) -> Literal["web_searcher", "word_count_rewriter", END]: # type: ignore
         if state["off_or_ontopic"] == "no":
             return END
         elif (
@@ -141,14 +141,14 @@ class NewsWorkflow:
         workflow = StateGraph(
             SharedArticleState, input=InputArticleState, output=OutputFinalArticleState
         )
-        workflow.add_node("news_chef", self.update_article_state)
+        workflow.add_node("article_chef", self.update_article_state)
         workflow.add_node("web_search_query_generator", self.web_search_query_gen_node)
         workflow.add_node("web_searcher", self.web_search_node)
         workflow.add_node("word_count_rewriter", self.word_count_rewriter_node)
-        workflow.set_entry_point("news_chef")
+        workflow.set_entry_point("article_chef")
         workflow.add_conditional_edges(
-            "news_chef",
-            self.news_chef_decider,
+            "article_chef",
+            self.article_chef_decider,
             {
                 "web_search_query_generator": "web_search_query_generator",
                 "web_searcher": "web_searcher",
@@ -156,9 +156,9 @@ class NewsWorkflow:
                 END: END,
             },
         )
-        workflow.add_edge("web_searcher", "news_chef")
-        workflow.add_edge("word_count_rewriter", "news_chef")
-        workflow.add_edge("web_search_query_generator", "news_chef")
+        workflow.add_edge("web_searcher", "article_chef")
+        workflow.add_edge("word_count_rewriter", "article_chef")
+        workflow.add_edge("web_search_query_generator", "article_chef")
 
         return workflow.compile()
 

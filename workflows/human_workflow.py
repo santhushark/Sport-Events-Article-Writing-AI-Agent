@@ -2,7 +2,7 @@ from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from .news_workflow import NewsWorkflow
+from .news_workflow import ArticleWorkflow
 
 
 class InputState(TypedDict):
@@ -20,7 +20,7 @@ class FinalState(IntermediateState):
 
 class HumanWorkflow:
     def __init__(self):
-        self.app = NewsWorkflow()
+        self.app = ArticleWorkflow()
         self.checkpointer = None
         self.workflow = None
 
