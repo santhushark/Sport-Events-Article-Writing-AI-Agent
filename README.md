@@ -28,3 +28,5 @@ docker compose up --build
 
  ## Below is an sample ARTICLE generated on the India vs New Zealand Champions Trophy 2025 Final Cricket Match
 AI GENERATED ARTICLE:
+
+**India triumphed over New Zealand by four wickets in the ICC Champions Trophy 2025 final held at the Dubai International Stadium on March 9, 2025. Chasing 252, India reached 254/6 in 49 overs, securing their third Champions Trophy title after victories in 2002 and 2013. Rohit Sharma led the chase with a stellar 76, forming a 105-run opening stand with Shubman Gill. Earlier, New Zealand posted 251/7, with Rachin Ravindra (37) and Will Young (15) adding 57 runs. Despite missed catches, India held their nerve to clinch a historic win in a tense finale.**
