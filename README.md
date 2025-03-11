@@ -26,7 +26,7 @@ docker compose up --build
 + Delete Thread API: This is to delete a particular thread from the database
 + Sessions API: This is to list all the active threads
 
- ## Below is an sample ARTICLE generated on the India vs New Zealand Champions Trophy 2025 Final Cricket Match
+ ## Below is a sample ARTICLE generated on the India vs New Zealand Champions Trophy 2025 Final Cricket Match
 AI GENERATED ARTICLE:
 
 **In the thrilling final of the 2025 ICC Champions Trophy, which was held at the iconic Dubai International Stadium, India emerged victorious against New Zealand by a margin of four wickets. The match showcased exceptional cricketing talent and strategic play from both teams. Captain Rohit Sharma was the standout performer for the Indian side, scoring a remarkable 76 runs off solid batting and showing composure under pressure. He formed a pivotal opening partnership with Shubman Gill, who contributed 31 runs to solidify their position at the start of the innings. This strong foundation set the tone for the chase, as they put on an impressive 105 runs together.**
