@@ -8,7 +8,7 @@ from operator import add
 
 
 class InputState(TypedDict):
-    article: str
+    event: str
 
 
 class OutputState(TypedDict):
@@ -23,13 +23,11 @@ def create_web_search_query_generator_agent():
     model_query_generator = ChatOpenAI(model="gpt-4o-mini")
 
     async def generate_web_search_query(state: OverallState):
-        human_message = HumanMessage(content=state["article"])
+        human_message = HumanMessage(content=state["event"])
         system_message = SystemMessage(
             content="You are a web search query generator agent. Generate a web search query to do web search about a sports event mentioned below. The query should be regarding the sports event summary."
         )
-        print("wsqg")
         response = await model_query_generator.ainvoke([system_message, human_message])
-        print("wsqg: ", response.content)
         state["agent_output"] = response.content
         return state
 

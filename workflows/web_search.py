@@ -15,7 +15,7 @@ load_dotenv()
 
 
 class InputState(TypedDict):
-    article: str
+    web_search_query: str
 
 
 class OutputState(TypedDict):
@@ -47,7 +47,7 @@ def create_web_search_agent():
     async def call_sport_event_web_search_tool(state: OverallState):
         local_messages = state.get("messages", [])
         if not local_messages:
-            human_message = HumanMessage(content=state["article"])
+            human_message = HumanMessage(content=state["web_search_query"])
             local_messages.append(human_message)
 
         system_message = SystemMessage(

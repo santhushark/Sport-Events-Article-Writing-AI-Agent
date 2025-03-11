@@ -6,12 +6,13 @@ from .news_workflow import ArticleWorkflow
 
 
 class InputState(TypedDict):
-    question: str
+    event: str
 
 
 class IntermediateState(InputState):
-    answer: str
+    final_article: str
     error: bool
+    ontopic: str
 
 
 class FinalState(IntermediateState):
@@ -45,15 +46,15 @@ class HumanWorkflow:
 
     async def newsagent_node(self, state: IntermediateState) -> IntermediateState:
         try:
-            print("question: " + state["question"])
-            response = await self.app.ainvoke({"article": state["question"]})
-            state["answer"] = response.get(
+            print("Event: " + state["event"])
+            response = await self.app.ainvoke({"event": state["event"]})
+            state["final_article"] = response.get(
                 "final_article", "Article not relevant for news agency"
             )
-            state["off_or_ontopic"] = response["off_or_ontopic"]
+            state["ontopic"] = response["ontopic"]
             state["error"] = False
         except Exception as e:
-            state["answer"] = "Error occured while creating a message"
+            state["final_Article"] = "Error occured while creating a message"
             state["error"] = True
             print(f"Error invoking newsagent_node: {e}")
         return state

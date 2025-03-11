@@ -6,7 +6,7 @@ from langgraph.graph import END, START, StateGraph
 
 
 class InputState(TypedDict):
-    article: str
+    web_search_result: str
 
 
 class OutputState(TypedDict):
@@ -21,7 +21,7 @@ def create_text_writer_agent():
     model_text_writer = ChatOpenAI(model="gpt-4o-mini")
 
     async def expand_text_to_100_words(state: OverallState):
-        human_message = HumanMessage(content=state["article"])
+        human_message = HumanMessage(content=state["web_search_result"])
         system_message = SystemMessage(
             content="Expand the following text to be at least 100 words. Maintain the original meaning while adding detail. Treat the original text as credible source. Just expand the text, no interpretation or anything else!"
         )

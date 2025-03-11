@@ -117,13 +117,13 @@ async def ask_question(
     if not request.sport_event:
         raise HTTPException(status_code=400, detail="Missing question.")
     response_state = await human_workflow.ainvoke(
-        input={"question": request.sport_event},
+        input={"event": request.sport_event},
         config={"recursion_limit": 15, "configurable": {"thread_id": thread_id}},
         subgraphs=True,
     )
     thread.question_asked = True
     thread.question = request.sport_event
-    thread.answer = response_state[1].get("answer")
+    thread.answer = response_state[1].get("final_article")
     thread.error = response_state[1].get("error", False)
     db.commit()
     return ThreadResponse(
