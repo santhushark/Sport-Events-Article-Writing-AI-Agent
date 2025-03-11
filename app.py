@@ -106,7 +106,6 @@ async def start_thread(db: Session = Depends(get_db)):
 async def ask_question(
     thread_id: str, request: ChatRequest, db: Session = Depends(get_db)
 ):
-    # print("entry:" + request.question)
     thread = db.query(Thread).filter(Thread.thread_id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread ID does not exist.")
@@ -115,15 +114,15 @@ async def ask_question(
             status_code=400,
             detail=f"Question has already been asked for thread ID: {thread_id}.",
         )
-    if not request.question:
+    if not request.sport_event:
         raise HTTPException(status_code=400, detail="Missing question.")
     response_state = await human_workflow.ainvoke(
-        input={"question": request.question},
+        input={"question": request.sport_event},
         config={"recursion_limit": 15, "configurable": {"thread_id": thread_id}},
         subgraphs=True,
     )
     thread.question_asked = True
-    thread.question = request.question
+    thread.question = request.sport_event
     thread.answer = response_state[1].get("answer")
     thread.error = response_state[1].get("error", False)
     db.commit()
