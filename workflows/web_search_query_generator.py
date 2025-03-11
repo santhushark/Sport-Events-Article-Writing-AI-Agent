@@ -12,28 +12,25 @@ class InputState(TypedDict):
 
 
 class OutputState(TypedDict):
-    web_search_query: str
+    agent_output: str
 
 
 class OverallState(InputState, OutputState):
-    messages: Annotated[List[BaseMessage], add]
+    pass
 
 
 def create_web_search_query_generator_agent():
     model_query_generator = ChatOpenAI(model="gpt-4o-mini")
 
     async def generate_web_search_query(state: OverallState):
-        local_messages = state.get("messages", [])
         human_message = HumanMessage(content=state["article"])
-        local_messages.append(human_message)
         system_message = SystemMessage(
             content="You are a web search query generator agent. Generate a web search query to do web search about a sports event mentioned below. The query should be regarding the sports event summary."
         )
+        print("wsqg")
         response = await model_query_generator.ainvoke([system_message, human_message])
-        # print("wsqg: " + response.content)
-        state["web_search_query"] = response.content
-        state["messages"] = local_messages + [response]
-        # print(state["messages"])
+        print("wsqg: ", response.content)
+        state["agent_output"] = response.content
         return state
 
     web_search_query_generator_graph = StateGraph(OverallState, input=InputState, output=OutputState)
