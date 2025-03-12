@@ -18,7 +18,7 @@ class IntermediateState(InputState):
 class FinalState(IntermediateState):
     confirmed: str
 
-
+#Human workflow agent
 class HumanWorkflow:
     def __init__(self):
         self.app = ArticleWorkflow()

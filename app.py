@@ -30,6 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=target_engin
 
 human_workflow = HumanWorkflow()
 
+# Threads table
 class Thread(Base):
     __tablename__ = "threads"
     thread_id = Column(String, primary_key=True, index=True)
@@ -39,6 +40,7 @@ class Thread(Base):
     confirmed = Column(Boolean, default=False)
     error = Column(Boolean, default=False)
 
+# Create and initialise database
 def initialize_database():
     with default_engine.connect() as connection:
         with connection.execution_options(isolation_level="AUTOCOMMIT"):
@@ -53,6 +55,7 @@ def ensure_tables():
     Base.metadata.create_all(bind=target_engine)
 
 
+# Method to get db connection, required for dependency injection
 def get_db():
     db = SessionLocal()
     try:
@@ -92,6 +95,14 @@ app.add_middleware(
 
 @app.post("/start_thread", response_model=StartThreadResponse)
 async def start_thread(db: Session = Depends(get_db)):
+    """
+    Create and start a thread
+
+    Args:
+
+    Returns:
+        StartThreadResponse
+    """
     thread_id = str(uuid4())
     new_thread = Thread(
         thread_id=thread_id, question_asked=False, confirmed=False, error=False
@@ -106,6 +117,15 @@ async def start_thread(db: Session = Depends(get_db)):
 async def ask_question(
     thread_id: str, request: ChatRequest, db: Session = Depends(get_db)
 ):
+    """
+    Article writer
+
+    Args:
+        thread_id (str): Thread Id created in start thread API
+
+    Returns:
+        ThreadResponse: Object containing generated article 
+    """
     thread = db.query(Thread).filter(Thread.thread_id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread ID does not exist.")
@@ -140,6 +160,16 @@ async def ask_question(
 async def edit_state(
     thread_id: str, request: UpdateStateRequest, db: Session = Depends(get_db)
 ):
+    """
+    Edit State for Human in the loop
+
+    Args:
+        thread_id (str): Thread ID associated with the article
+        request (UpdateStateRequest): containing the edited article
+
+    Response:
+        ThreadResponse : Object containing generated article 
+    """
     thread = db.query(Thread).filter(Thread.thread_id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread ID does not exist.")
@@ -169,6 +199,15 @@ async def edit_state(
 
 @app.post("/confirm/{thread_id}", response_model=ThreadResponse)
 async def confirm(thread_id: str, db: Session = Depends(get_db)):
+    """
+    Confirm Article after human review
+
+    Args:
+        thread_id (str): thread id associated with the article
+    
+    Response:
+        ThreadResponse: Object containing confirmed article
+    """
     thread = db.query(Thread).filter(Thread.thread_id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread ID does not exist.")
@@ -196,6 +235,15 @@ async def confirm(thread_id: str, db: Session = Depends(get_db)):
 
 @app.delete("/delete_thread/{thread_id}", response_model=ThreadResponse)
 async def delete_thread(thread_id: str, db: Session = Depends(get_db)):
+    """
+    Deleting a thread
+
+    Args:
+        thread_id (str): thread id associated with the article
+
+    Response:
+        ThreadResponse: Object containing the deleted article
+    """
     thread = db.query(Thread).filter(Thread.thread_id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread ID does not exist.")
@@ -213,6 +261,15 @@ async def delete_thread(thread_id: str, db: Session = Depends(get_db)):
 
 @app.get("/sessions", response_model=list[ThreadResponse])
 async def list_sessions(db: Session = Depends(get_db)):
+    """
+    List all sessions or threads or articles
+
+    Args:
+        none
+    
+    Response:
+        List[ThreadResponse] : List of all active articles or threads
+    """
     threads = db.query(Thread).all()
     return [
         ThreadResponse(

@@ -17,21 +17,21 @@ class OverallState(InputState, OutputState):
     pass
 
 
-def create_text_writer_agent():
-    model_text_writer = ChatOpenAI(model="gpt-4o-mini")
+def create_article_writer_agent():
+    model_article_writer = ChatOpenAI(model="gpt-4o-mini")
 
-    async def expand_text_to_100_words(state: OverallState):
+    async def write_article(state: OverallState):
         human_message = HumanMessage(content=state["web_search_result"])
         system_message = SystemMessage(
             content="Expand the following text to be at least 100 words. Maintain the original meaning while adding detail. Treat the original text as credible source. Just expand the text, no interpretation or anything else!"
         )
-        response = await model_text_writer.ainvoke([system_message, human_message])
+        response = await model_article_writer.ainvoke([system_message, human_message])
         state["agent_output"] = response.content
         return state
 
-    text_writer_graph = StateGraph(OverallState, input=InputState, output=OutputState)
-    text_writer_graph.add_node("expand_text_to_100_words", expand_text_to_100_words)
-    text_writer_graph.add_edge(START, "expand_text_to_100_words")
-    text_writer_graph.add_edge("expand_text_to_100_words", END)
+    article_writer_graph = StateGraph(OverallState, input=InputState, output=OutputState)
+    article_writer_graph.add_node("write_article", write_article)
+    article_writer_graph.add_edge(START, "write_article")
+    article_writer_graph.add_edge("write_article", END)
 
-    return text_writer_graph.compile()
+    return article_writer_graph.compile()

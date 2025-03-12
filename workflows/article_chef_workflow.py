@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
-from .text_writer import create_text_writer_agent
+from .article_writer import create_article_writer_agent
 from .web_search import create_web_search_agent
 from .web_search_query_generator import create_web_search_query_generator_agent
 
@@ -48,11 +48,12 @@ class SharedArticleState(InputArticleState, OutputFinalArticleState):
     meets_100_words: str
 
 
+# Article Chef agent, Supervises web_search_query_generator, web_search and article_writer agent
 class ArticleWorkflow:
     def __init__(self, llm_model="gpt-4o-mini", temperature=0):
         self.web_search_query_generator_agent = create_web_search_query_generator_agent()
         self.web_search_agent = create_web_search_agent()
-        self.text_writer_agent = create_text_writer_agent()
+        self.article_writer_agent = create_article_writer_agent()
         self.llm_postability = ChatOpenAI(model=llm_model, temperature=temperature)
         self.workflow = self._create_workflow()
 
@@ -79,7 +80,7 @@ class ArticleWorkflow:
             ArticlePostabilityGrader
         )
 
-    async def update_article_state(self, state: SharedArticleState) -> SharedArticleState:
+    async def update_event_state(self, state: SharedArticleState) -> SharedArticleState:
         article_chef = self._create_postability_grader()
         states_to_check = ["ontopic", "mentions_sport_name", "mentions_team_names", "mentions_tournament_name", "meets_100_words"]
         if not all(key in state for key in states_to_check):
@@ -92,23 +93,27 @@ class ArticleWorkflow:
 
         return state
 
+    # Web search query generator node, Calls Query Generator Agent
     async def web_search_query_gen_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.web_search_query_generator_agent.ainvoke({"event": state["event"]})
         state["web_search_query_generated"] = f"{response['agent_output']}"
         return state
 
+    # Web Search node, Calls Web Search Agent
     async def web_search_node(self, state: SharedArticleState) -> SharedArticleState:
         response = await self.web_search_agent.ainvoke({"web_search_query": state["web_search_query_generated"]})
         state["web_search_result"] = f"{response['agent_output']}"
         return state
 
-    async def word_count_rewriter_node(self, state: SharedArticleState) -> SharedArticleState:
-        response = await self.text_writer_agent.ainvoke({"web_search_result": state["web_search_result"]})
+    # Article writer mode, calls article writer agent
+    async def article_writer_node(self, state: SharedArticleState) -> SharedArticleState:
+        response = await self.article_writer_agent.ainvoke({"web_search_result": state["web_search_result"]})
         state["final_article"] = response["agent_output"]
         state["meets_100_words"] = "yes"
         return state
 
-    def article_chef_decider(self,state: SharedArticleState,) -> Literal["web_search_query_generator", "web_searcher", "word_count_rewriter", END]: # type: ignore
+    # decides what agent to call next
+    def article_chef_decider(self,state: SharedArticleState,) -> Literal["web_search_query_generator", "web_searcher", "article_writer", END]: # type: ignore
         if (
             state["ontopic"] == "no" 
             or state["mentions_sport_name"] == "no" 
@@ -121,19 +126,20 @@ class ArticleWorkflow:
         elif "web_search_result" not in state:
             next_node = "web_searcher"
         elif state["meets_100_words"] == "no":
-            next_node = "word_count_rewriter"
+            next_node = "article_writer"
         else:
             next_node = END
         return next_node
 
+    # Creating supervisor agent workflow
     def _create_workflow(self):
         workflow = StateGraph(
             SharedArticleState, input=InputArticleState, output=OutputFinalArticleState
         )
-        workflow.add_node("article_chef", self.update_article_state)
+        workflow.add_node("article_chef", self.update_event_state)
         workflow.add_node("web_search_query_generator", self.web_search_query_gen_node)
         workflow.add_node("web_searcher", self.web_search_node)
-        workflow.add_node("word_count_rewriter", self.word_count_rewriter_node)
+        workflow.add_node("article_writer", self.article_writer_node)
         workflow.set_entry_point("article_chef")
         workflow.add_conditional_edges(
             "article_chef",
@@ -141,12 +147,12 @@ class ArticleWorkflow:
             {
                 "web_search_query_generator": "web_search_query_generator",
                 "web_searcher": "web_searcher",
-                "word_count_rewriter": "word_count_rewriter",
+                "article_writer": "article_writer",
                 END: END,
             },
         )
         workflow.add_edge("web_searcher", "article_chef")
-        workflow.add_edge("word_count_rewriter", "article_chef")
+        workflow.add_edge("article_writer", "article_chef")
         workflow.add_edge("web_search_query_generator", "article_chef")
 
         return workflow.compile()
