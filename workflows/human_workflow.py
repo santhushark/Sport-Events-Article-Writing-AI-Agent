@@ -2,7 +2,7 @@ from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from .news_workflow import ArticleWorkflow
+from .article_chef_workflow import ArticleWorkflow
 
 
 class InputState(TypedDict):

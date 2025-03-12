@@ -30,7 +30,7 @@ class OverallState(InputState, OutputState):
 def get_web_search_results(web_search_query: str):
     """Get Web Search results"""
     client = TavilyClient()
-    res = client.search(web_search_query, search_depth="advanced", topic = "news", days= 4, max_results= 5, include_answer=True, include_raw_content=True)
+    res = client.search(web_search_query, search_depth="advanced", topic = "news", days= 10, max_results= 5, include_answer=True, include_raw_content=True)
     search_res_content = ""
     search_res_content+= "web_search_answer_summary: "+ res["answer"]
     for i in range(5):
