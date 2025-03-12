@@ -9,6 +9,11 @@ This is a multi-agentic RAG application following Supervior Design Pattern. Impl
 + The "ArticleChef" then calls the "ArticleWriter" agent which then analyses the information gathered from web and writes a beautiful sports article. The article is then retured to "ArticleChef"
 + The article is now sent back to "HumanWorkflow" where the article is evaluated by human and finally confirmed for publication.
 
+## Agentic RAG Workflow
+Below is a Multi-Agentic RAG workflow following Supervisor Design Pattern with human in the loop feature
+
+![RAG_Workflow](assets/sport_article_writer_flowchart.jpg?raw=true)
+
 ## Steps to run the application in your local computer
 + Clone the repository and open the project in the IDE of your choice.
 + Create a virtual python environment and activate the environment
